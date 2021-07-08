@@ -4,7 +4,7 @@ import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
 } from 'react-native-reanimated';
-import {Page} from './Page';
+import Page from './Page';
 
 interface Data {
   id: number;
@@ -25,7 +25,9 @@ const data: Array<Data> = [
 ];
 
 export default function App() {
+  const flatListRef = React.useRef<FlatList<any>>(null);
   const translateX = useSharedValue(0);
+  const [test, setTest] = React.useState<Array<Data>>([]);
 
   const AnimatedFlatList = Animated.createAnimatedComponent(
     FlatList as new () => FlatList<Data>,
@@ -36,15 +38,25 @@ export default function App() {
   });
 
   const indexChanged = React.useRef((info: ChangeStoriesProps) => {
-    //pega os dados atuais da tela em exibição
-    console.log(info.viewableItems.map(items => items.item));
+    setTest(info.viewableItems.map(items => items.item[0]));
   });
+
+  const onPressPrevious = () => {
+    flatListRef.current?.scrollToIndex({index: 2});
+  };
+
+  React.useEffect(() => {
+    if (flatListRef.current) {
+      onPressPrevious();
+    }
+  }, []);
 
   return (
     <AnimatedFlatList
       style={styles.container}
       onScroll={scrollHandler}
       scrollEventThrottle={16}
+      ref={flatListRef}
       pagingEnabled
       horizontal
       data={data}
@@ -52,9 +64,27 @@ export default function App() {
       keyExtractor={({id}) => {
         return id as any;
       }}
+      onScrollToIndexFailed={() => {
+        const wait = new Promise(resolve => setTimeout(resolve, 500));
+        wait.then(() => {
+          flatListRef.current?.scrollToIndex({
+            index: 2,
+            animated: true,
+          });
+        });
+      }}
       showsHorizontalScrollIndicator={false}
-      renderItem={({item: {title}, index}) => {
-        return <Page title={title} translateX={translateX} index={index} />;
+      renderItem={({item, index}) => {
+        return (
+          <Page
+            translateX={translateX}
+            index={index}
+            ref={flatListRef}
+            lastIndex={data.length}
+            actualScreen={test}
+            item={item}
+          />
+        );
       }}
       onViewableItemsChanged={indexChanged.current}
     />

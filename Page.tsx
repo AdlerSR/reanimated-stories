@@ -1,5 +1,5 @@
 import React from 'react';
-import {Dimensions, StyleSheet} from 'react-native';
+import {Dimensions, StyleSheet, Pressable} from 'react-native';
 import Animated, {
   Extrapolate,
   interpolate,
@@ -8,52 +8,68 @@ import Animated, {
 
 const {height, width} = Dimensions.get('window');
 
-interface PageProps {
-  index: number;
-  translateX: Animated.SharedValue<number>;
+interface Data {
+  id: number;
   title: string;
 }
 
-const Page: React.FC<PageProps> = ({index, translateX}) => {
-  const inputRange = [(-index - 1) * width, index * width, (index + 1) * width];
+interface PageProps {
+  item: Data;
+  index: number;
+  translateX: Animated.SharedValue<number>;
+  lastIndex: number;
+  ref: any;
+  actualScreen: Data[];
+}
 
-  const ImageStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      translateX.value,
-      inputRange,
-      [0.5, 1, 0.5],
-      Extrapolate.CLAMP,
+const Page: React.FC<PageProps> = React.forwardRef(
+  ({index, translateX, lastIndex, actualScreen, item}, ref) => {
+    const inputRange = [
+      (-index - 1) * width,
+      index * width,
+      (index + 1) * width,
+    ];
+
+    const ImageStyle = useAnimatedStyle(() => {
+      const opacity = interpolate(
+        translateX.value,
+        inputRange,
+        [0.5, 1, 0.5],
+        Extrapolate.CLAMP,
+      );
+
+      return {
+        opacity,
+      };
+    });
+
+    const PageStyle = useAnimatedStyle(() => {
+      const scale = interpolate(
+        translateX.value,
+        inputRange,
+        [0.5, 1, 0.5],
+        Extrapolate.CLAMP,
+      );
+
+      return {
+        transform: [{scale}],
+      };
+    });
+
+    return (
+      <Animated.View style={[styles.container, PageStyle]}>
+        <Pressable style={{width: '100%', height: '100%'}}>
+          <Animated.Image
+            style={[ImageStyle, styles.image]}
+            source={{
+              uri: 'https://images.unsplash.com/photo-1625602187345-8f83e1213bfa?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1268&q=80',
+            }}
+          />
+        </Pressable>
+      </Animated.View>
     );
-
-    return {
-      opacity,
-    };
-  });
-
-  const PageStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      translateX.value,
-      inputRange,
-      [0.5, 1, 0.5],
-      Extrapolate.CLAMP,
-    );
-
-    return {
-      transform: [{scale}],
-    };
-  });
-
-  return (
-    <Animated.View style={[styles.container, PageStyle]}>
-      <Animated.Image
-        style={[ImageStyle, styles.image]}
-        source={{
-          uri: 'https://images.unsplash.com/photo-1625602187345-8f83e1213bfa?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1268&q=80',
-        }}
-      />
-    </Animated.View>
-  );
-};
+  },
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -66,4 +82,4 @@ const styles = StyleSheet.create({
   image: {width: '100%', height: '100%'},
 });
 
-export {Page};
+export default Page;
